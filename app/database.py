@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env
 
 # PostgreSQL connection string from environment variables
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = "postgresql://shrinit:Simba1805@offerlicious.postgres.database.azure.com/postgres"
 
 # Create a SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
