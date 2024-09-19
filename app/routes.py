@@ -30,7 +30,8 @@ async def shorten_url(url_data: URLCreate):
         original_url=str(url_data.original_url),
         short_url=short_url,
         alias=url_data.alias,
-        ttl=ttl_date
+        ttl=ttl_date,
+        is_active = True
     )
     await database.execute(query)
 

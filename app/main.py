@@ -1,20 +1,25 @@
-# app/main.py
+import logging
 from fastapi import FastAPI
-from fastapi import Depends
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from contextlib import asynccontextmanager
 from app.routes import router as url_router
 from app.database import database, engine, metadata
 from datetime import datetime
 from app.models import urls
 
-# Function for cleaning up expired URLs
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Function for cleaning up expired URLs (async)
 async def cleanup_expired_urls():
+    logger.info("Running cleanup job")
     query = urls.delete().where(urls.c.ttl < datetime.utcnow())
-    await database.execute(query)
+    result = await database.execute(query)
+    logger.info(f"Deleted {result} expired URLs")
 
 # Scheduler setup
-scheduler = BackgroundScheduler()
+scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,14 +27,16 @@ async def lifespan(app: FastAPI):
     metadata.create_all(engine)
     await database.connect()
 
-    # Schedule the background cleanup job to run every hour
-    scheduler.add_job(cleanup_expired_urls, 'interval', hours=1)
+    # Schedule the background cleanup job to run every minute
+    logger.info("Scheduling cleanup job")
+    scheduler.add_job(cleanup_expired_urls, 'interval', minutes=1)
     scheduler.start()
 
     # Yield control back to FastAPI to run the app
     yield
 
     # Shutdown event
+    logger.info("Shutting down scheduler")
     scheduler.shutdown()
     await database.disconnect()
 
